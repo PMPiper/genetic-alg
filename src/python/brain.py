@@ -10,12 +10,10 @@ class Brain:
 
     def randomize(self):
         for i in range(self.brain_size):
+            # Adds a random tuple of directions: (x, y)
             self.dna.append((random.randint(-10, 10), random.randint(-10, 10)))
-            #self.dna.append((10, -15))
-            #self.dna.append((random.randint(-10, 10), random.randint(-10, 0)))
 
     def mutate(self, mutation_rate):
-        # if mutation not [0, 1)
         for i in range(self.brain_size):
             if random.random() < mutation_rate:
                 self.dna[i] = (random.randint(-10, 10), random.randint(-10, 10))
