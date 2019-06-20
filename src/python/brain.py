@@ -15,6 +15,7 @@ class Brain:
 
     def mutate(self, mutation_rate):
         for i in range(self.brain_size):
+            # Randomly changes a direction step based on the mutation rate
             if random.random() < mutation_rate:
                 self.dna[i] = (random.randint(-10, 10), random.randint(-10, 10))
     
