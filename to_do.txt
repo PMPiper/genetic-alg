@@ -1,3 +1,6 @@
+Confirm the coords arguments order for OOBound checks
+
 1. Fix the run_generation method to be more efficient
 2. Print Generation on screen
 3. Add a global end case for once the goal has been reached
+4. Add obstacle
