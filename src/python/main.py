@@ -1,10 +1,8 @@
-from tkinter import *
+import tkinter 
 import population
 import time
-#import dot
-#import random
 
-tk = Tk()
+tk = tkinter.Tk()
 
 # Creates a population of dots.
 # pop_size is the "batch" size per generation of dots.
