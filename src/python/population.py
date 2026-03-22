@@ -28,6 +28,12 @@ class Population:
             a true genetic algorithm. Raising this to 3–5 preserves genetic
             diversity: a dot that found a detour around an obstacle may rank
             5th by raw fitness but carries the only viable path genes.
+        use_crossover: Whether to splice DNA from two parents before mutating.
+        fitness_mode: Distance heuristic used in fitness calculation.
+            "distance" uses straight-line Euclidean distance; "waypoint"
+            routes around the obstacle when it blocks the direct path.
+        penalize_obstacle_death: Whether to halve fitness for dots that died
+            by hitting the obstacle.
         generation: Index of the current generation (0-based).
         best_dot: Reference to the fittest Dot from the most recent generation.
         goal_reached: True once any dot has reached the goal.
@@ -44,6 +50,8 @@ class Population:
         mutation_rate: float,
         num_parents: int = 1,
         use_crossover: bool = False,
+        fitness_mode: str = "distance",
+        penalize_obstacle_death: bool = False,
     ) -> None:
         """Initializes the population, canvas, and static canvas elements.
 
@@ -56,10 +64,12 @@ class Population:
                 Must be >= 1 and <= pop_size.
             use_crossover: If True, each offspring is produced by splicing
                 the DNA of two roulette-selected parents before mutating.
-                Requires num_parents >= 2 to have any effect. Crossover lets
-                complementary partial paths recombine: a dot that navigated
-                the first half of a route well can donate those genes to one
-                that handled the second half well.
+                Requires num_parents >= 2 to have any effect.
+            fitness_mode: "distance" (straight-line) or "waypoint" (routes
+                around the obstacle). "waypoint" gives a more accurate gradient
+                when an obstacle blocks the direct path to the goal.
+            penalize_obstacle_death: If True, halve the fitness of dots that
+                died by hitting the obstacle.
         """
         self.population: list[dot.Dot] = []
         self.tk: Tk = pop_tk
@@ -70,6 +80,8 @@ class Population:
         self.mutation_rate: float = mutation_rate
         self.num_parents: int = num_parents
         self.use_crossover: bool = use_crossover
+        self.fitness_mode: str = fitness_mode
+        self.penalize_obstacle_death: bool = penalize_obstacle_death
         self.generation: int = 0
         self.best_dot: dot.Dot | None = None
         self.goal_reached: bool = False
@@ -137,7 +149,13 @@ class Population:
         max_fitness = -1.0
         best_index = 0
         for i, d in enumerate(self.population):
-            d.calc_fitness(self.canvas, self.goal)
+            d.calc_fitness(
+                self.canvas,
+                self.goal,
+                fitness_mode=self.fitness_mode,
+                obstacle_coords=obstacle_coords,
+                penalize_obstacle_death=self.penalize_obstacle_death,
+            )
             if d.fitness > max_fitness:
                 max_fitness = d.fitness
                 best_index = i
@@ -156,7 +174,9 @@ class Population:
           - Slot 0: an unmodified clone of the best dot (elitism — guarantees
             the best solution found so far is never lost).
           - Remaining slots: clones of parents chosen by fitness-proportionate
-            (roulette wheel) selection, each mutated at mutation_rate.
+            (roulette wheel) selection, each mutated at mutation_rate. If
+            use_crossover is True and num_parents >= 2, offspring DNA is first
+            spliced from two parents before mutating.
 
         Old canvas items are deleted once the new generation is placed.
         """
