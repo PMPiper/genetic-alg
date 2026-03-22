@@ -12,6 +12,8 @@ class Dot:
 
     Attributes:
         dead: True when the dot has run out of steps or gone out of bounds.
+        hit_obstacle: True when the dot died specifically from an obstacle
+            collision (as opposed to a wall or step exhaustion).
         reached_goal: True when the dot has overlapped the goal region.
         fitness: Fitness score calculated after a generation ends.
         obj_id: Tkinter canvas item ID for the dot oval.
@@ -26,6 +28,7 @@ class Dot:
             brain_size: Number of movement steps the dot's brain will contain.
         """
         self.dead: bool = False
+        self.hit_obstacle: bool = False
         self.reached_goal: bool = False
         self.fitness: float = 0.0
         self.obj_id: int = canvas.create_oval(297, 303, 303, 297, fill="black")
@@ -58,7 +61,7 @@ class Dot:
         Args:
             canvas: The tkinter Canvas containing the dot.
             obstacle_coords: Optional (x1, y1, x2, y2) bounding box of an
-                obstacle. The dot dies on overlap.
+                obstacle. The dot dies on overlap and hit_obstacle is set.
         """
         if self.dead or self.reached_goal:
             return
@@ -73,6 +76,7 @@ class Dot:
             ox1, oy1, ox2, oy2 = obstacle_coords
             if c[2] >= ox1 and c[0] <= ox2 and c[3] >= oy1 and c[1] <= oy2:
                 self.dead = True
+                self.hit_obstacle = True
                 canvas.itemconfigure(self.obj_id, fill="red")
         elif c[2] >= 293 and c[0] <= 307 and c[3] >= 5 and c[1] <= 19:
             self.reached_goal = True
@@ -95,20 +99,37 @@ class Dot:
         dot_y = (dy1 + dy2) / 2
         return math.sqrt((goal_x - dot_x) ** 2 + (goal_y - dot_y) ** 2)
 
-    def calc_fitness(self, canvas: tkinter.Canvas, goal_id: int) -> None:
+    def calc_fitness(
+        self,
+        canvas: tkinter.Canvas,
+        goal_id: int,
+        penalize_obstacle_death: bool = False,
+    ) -> None:
         """Computes and stores the dot's fitness score.
 
         Dots that reached the goal are rewarded more heavily, with a bonus
         for doing so in fewer steps.
 
+        By default the fitness of dots that did not reach the goal is
+        1 / distance², which rewards proximity. When penalize_obstacle_death
+        is True, dots that collided with an obstacle have their fitness
+        halved. This discourages the population from converging on paths
+        that run straight into obstacles, which can score well on raw
+        distance but are evolutionary dead-ends.
+
         Args:
             canvas: The tkinter Canvas containing the dot.
             goal_id: Canvas item ID of the goal oval.
+            penalize_obstacle_death: If True, halve the fitness of any dot
+                that died by hitting an obstacle.
         """
         if self.reached_goal:
             self.fitness = 1.0 / 16.0 + 10000.0 / (self.dot_brain.brain_step ** 2)
         else:
             self.fitness = 1.0 / (self.distance(canvas, goal_id) ** 2)
+
+        if penalize_obstacle_death and self.hit_obstacle:
+            self.fitness *= 0.5
 
     def clone(self, canvas: tkinter.Canvas) -> "Dot":
         """Returns a copy of this dot with reset state, placed on the canvas.
@@ -121,6 +142,7 @@ class Dot:
         """
         clone = copy.deepcopy(self)
         clone.dead = False
+        clone.hit_obstacle = False
         clone.reached_goal = False
         clone.fitness = 0.0
         clone.obj_id = canvas.create_oval(297, 303, 303, 297, fill="black")
@@ -140,6 +162,7 @@ class Dot:
         """
         clone = copy.deepcopy(self)
         clone.dead = False
+        clone.hit_obstacle = False
         clone.reached_goal = False
         clone.fitness = 0.0
         clone.obj_id = canvas.create_oval(297, 303, 303, 297, fill="black")
