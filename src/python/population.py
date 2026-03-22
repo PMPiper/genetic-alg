@@ -43,6 +43,7 @@ class Population:
         brain_size: int,
         mutation_rate: float,
         num_parents: int = 1,
+        use_crossover: bool = False,
     ) -> None:
         """Initializes the population, canvas, and static canvas elements.
 
@@ -53,6 +54,12 @@ class Population:
             mutation_rate: Probability in [0, 1] that a DNA step mutates.
             num_parents: Number of top-fitness dots eligible to breed.
                 Must be >= 1 and <= pop_size.
+            use_crossover: If True, each offspring is produced by splicing
+                the DNA of two roulette-selected parents before mutating.
+                Requires num_parents >= 2 to have any effect. Crossover lets
+                complementary partial paths recombine: a dot that navigated
+                the first half of a route well can donate those genes to one
+                that handled the second half well.
         """
         self.population: list[dot.Dot] = []
         self.tk: Tk = pop_tk
@@ -62,6 +69,7 @@ class Population:
         self.brain_size: int = brain_size
         self.mutation_rate: float = mutation_rate
         self.num_parents: int = num_parents
+        self.use_crossover: bool = use_crossover
         self.generation: int = 0
         self.best_dot: dot.Dot | None = None
         self.goal_reached: bool = False
@@ -161,8 +169,19 @@ class Population:
         new_gen: list[dot.Dot] = []
         new_gen.append(parents[0].clone(self.canvas))  # elite pass-through
         for _ in range(self.pop_size - 1):
-            parent = self._select_parent(parents)
-            new_gen.append(parent.clone_and_mutate(self.canvas, self.mutation_rate))
+            if self.use_crossover and len(parents) >= 2:
+                # Pick two parents independently; they may be the same dot,
+                # which degrades gracefully to plain mutation.
+                parent_a = self._select_parent(parents)
+                parent_b = self._select_parent(parents)
+                child_brain = parent_a.dot_brain.crossover(parent_b.dot_brain)
+                child_brain.mutate(self.mutation_rate)
+                child = parent_a.clone(self.canvas)
+                child.dot_brain = child_brain
+                new_gen.append(child)
+            else:
+                parent = self._select_parent(parents)
+                new_gen.append(parent.clone_and_mutate(self.canvas, self.mutation_rate))
 
         for d in self.population:
             self.canvas.delete(d.obj_id)
