@@ -26,6 +26,11 @@ class Population:
             10, 10, anchor="nw", text="Generation: 0", fill="black"
         )
 
+        # Obstacle bar between the start position and the goal
+        self.obstacle = self.canvas.create_rectangle(
+            150, 200, 450, 215, fill="brown"
+        )
+
     # creates a new batch of dots for the first generation.
     def make_first_pop(self):
         for i in range(self.pop_size):
@@ -70,7 +75,9 @@ class Population:
                 # j = 9
                 # updating dot ((9 + 1*10) + 2) = 21
                 # and so on
-                self.population[int(j + self.generation * self.pop_size)].update(self.canvas)
+                self.population[int(j + self.generation * self.pop_size)].update(
+                    self.canvas, self.canvas.coords(self.obstacle)
+                )
             self.tk.update()
             time.sleep(.01)
 

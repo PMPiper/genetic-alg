@@ -34,12 +34,12 @@ class Dot:
             self.dead = True
 
     # Called when the generation runs
-    def update(self, canvas):
+    def update(self, canvas, obstacle_coords=None):
         # Only update the dot if it hasn't died and hasn't reached the goal
         if not self.dead and not self.reached_goal:
             # Moves the dot based on its next brain_step
             self.move(canvas)
-            
+
             c = canvas.coords(self.obj_id)  # [x1, y1, x2, y2]
 
             # Checks to see if the dot is out of bounds and updates its status
@@ -47,11 +47,16 @@ class Dot:
                 self.dead = True
                 canvas.itemconfigure(self.obj_id, fill="red")
 
+            # AABB overlap with obstacle
+            elif obstacle_coords:
+                ox1, oy1, ox2, oy2 = obstacle_coords
+                if c[2] >= ox1 and c[0] <= ox2 and c[3] >= oy1 and c[1] <= oy2:
+                    self.dead = True
+                    canvas.itemconfigure(self.obj_id, fill="red")
+
             # AABB overlap with goal (293, 5, 307, 19)
             elif c[2] >= 293 and c[0] <= 307 and c[3] >= 5 and c[1] <= 19:
                 self.reached_goal = True
-        else:
-            pass
 
     # Canvas object coordinates have 4 defined by a rectangle the dot lies in
     def distance(self, canvas, goal_id):
