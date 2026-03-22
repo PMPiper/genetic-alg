@@ -18,37 +18,25 @@ class Dot:
     
     # Called by the update method
     def move(self, canvas):
-        print("dot {0} brain_step: {1}; brain_size {2}".format(self.obj_id, 
-                self.dot_brain.brain_step, self.dot_brain.brain_size))
-        
         # At this point the dot is still alive, so we have to check to see
         # if it has any remaining steps in its brain.
         if self.dot_brain.brain_step < self.dot_brain.brain_size:
-            print("I am moving dot {0}, {1}dx, {2}dy".format(self.obj_id, 
-                    self.dot_brain.dna[self.dot_brain.brain_step][0],
-                    self.dot_brain.dna[self.dot_brain.brain_step][1]))
-            
             # Each object in the dotbrain has a tuple of directions.
             # We tell the canvas to update the dot of the cooresponding obj_id
             # and move it according to the directions at the current brain_step.
             # Increase brain_step by one for the next move call.
-            canvas.move(self.obj_id, 
-                        self.dot_brain.dna[self.dot_brain.brain_step][0], 
+            canvas.move(self.obj_id,
+                        self.dot_brain.dna[self.dot_brain.brain_step][0],
                         self.dot_brain.dna[self.dot_brain.brain_step][1])
             self.dot_brain.brain_step += 1
         else:
-            print("dot {0} has no more brain steps".format(self.obj_id))
             canvas.itemconfigure(self.obj_id, fill="orange")
             self.dead = True
 
     # Called when the generation runs
     def update(self, canvas):
-        print("I am updating dot {0}".format(self.obj_id))
-
         # Only update the dot if it hasn't died and hasn't reached the goal
         if not self.dead and not self.reached_goal:
-            print("dot {0} is not dead and hasn't reached goal".format(self.obj_id))
-
             # Moves the dot based on its next brain_step
             self.move(canvas)
             
@@ -63,7 +51,7 @@ class Dot:
             elif c[2] >= 293 and c[0] <= 307 and c[3] >= 5 and c[1] <= 19:
                 self.reached_goal = True
         else:
-            print("dot {0} is dead or has reached goal".format(self.obj_id))
+            pass
 
     # Canvas object coordinates have 4 defined by a rectangle the dot lies in
     def distance(self, canvas, goal_id):

@@ -28,14 +28,12 @@ class Population:
             self.population.append(dot.Dot(self.canvas, self.brain_size))
 
     def run_generation(self):
-        print("generation: {0}".format(self.generation))
-
-        # We could do this while all not dead or reached goal and skip the dead dots, 
+        # We could do this while all not dead or reached goal and skip the dead dots,
         # but this is simpler without worrying about performance/time complexity for now.
         # Update the dots the number of times that there are brain steps.
-        # Loop over the population so the update/redraw method is only called after every 
+        # Loop over the population so the update/redraw method is only called after every
         # dot has been moved.
-        # 1 is added to the range so the brain can get past its end and be marked 
+        # 1 is added to the range so the brain can get past its end and be marked
         # complete.
         for i in range(self.brain_size + 1):
             for j in range(self.pop_size):
@@ -63,7 +61,6 @@ class Population:
                 # j = 9
                 # updating dot ((9 + 1*10) + 2) = 21
                 # and so on
-                print("updating dot {0}".format(int(j + self.generation * self.pop_size) + 2))
                 self.population[int(j + self.generation * self.pop_size)].update(self.canvas)
             self.tk.update()
             time.sleep(.01)
@@ -82,7 +79,6 @@ class Population:
 
         # Set the best dot in the population to be cloned
         self.best_dot = self.population[self.best_dot_index]
-        print("The best dot is {0}".format(self.best_dot.obj_id))
         self.canvas.itemconfigure(self.best_dot.obj_id, fill="purple")
         self.tk.update()
 
@@ -96,10 +92,10 @@ class Population:
         # Clone and mutate the rest to fill out the batch
         for i in range(self.pop_size):
             if i == 0:
-                first_clone = self.best_dot.clone(self.canvas)
-                print("first_clone.obj_id: {0}".format(first_clone.obj_id))
-                self.population.append(first_clone)
+                self.population.append(self.best_dot.clone(self.canvas))
             else:
-                self.population.append(self.best_dot.clone_and_mutate(self.canvas, self.mutation_rate))
+                self.population.append(
+                    self.best_dot.clone_and_mutate(self.canvas, self.mutation_rate)
+                )
 
         self.generation += 1
