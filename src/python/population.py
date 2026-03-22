@@ -21,6 +21,10 @@ class Population:
         # the goal id is alway 1, which is stored by the canvas.
         self.goal = self.canvas.create_oval(293, 5, 307, 19, fill="green")
 
+        self.gen_label = self.canvas.create_text(
+            10, 10, anchor="nw", text="Generation: 0", fill="black"
+        )
+
     # creates a new batch of dots for the first generation.
     def make_first_pop(self):
         for i in range(self.pop_size):
@@ -28,6 +32,10 @@ class Population:
             self.population.append(dot.Dot(self.canvas, self.brain_size))
 
     def run_generation(self):
+        self.canvas.itemconfigure(
+            self.gen_label, text="Generation: {0}".format(self.generation)
+        )
+
         # We could do this while all not dead or reached goal and skip the dead dots,
         # but this is simpler without worrying about performance/time complexity for now.
         # Update the dots the number of times that there are brain steps.
