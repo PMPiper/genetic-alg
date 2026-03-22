@@ -38,6 +38,30 @@ class Brain:
             if random.random() < mutation_rate:
                 self.dna[i] = (random.randint(-10, 10), random.randint(-10, 10))
 
+    def crossover(self, other: "Brain") -> "Brain":
+        """Creates a child Brain via single-point crossover with another Brain.
+
+        Picks a random cut point and splices self's DNA up to the cut with
+        other's DNA from the cut onward. This is the core recombination
+        operator in genetic algorithms: rather than relying on mutation alone
+        to search the space, crossover lets two fit parents combine partial
+        solutions. A dot that navigated the first half of a path well can
+        donate those genes to a dot that handled the second half well.
+
+        The resulting child still has brain_step=0 and must be mutated
+        separately if desired.
+
+        Args:
+            other: The second parent Brain. Must have the same brain_size.
+
+        Returns:
+            A new Brain whose DNA is self.dna[:cut] + other.dna[cut:].
+        """
+        child = Brain(self.brain_size)
+        cut = random.randint(0, self.brain_size)
+        child.dna = self.dna[:cut] + other.dna[cut:]
+        return child
+
     def clone(self) -> "Brain":
         """Returns a shallow copy of this Brain.
 
