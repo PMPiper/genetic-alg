@@ -52,22 +52,15 @@ class Dot:
             # Moves the dot based on its next brain_step
             self.move(canvas)
             
-            # Checks to see if the dot is out of bounds and updates its status
-            if (canvas.coords(self.obj_id)[0] >= 596 
-                or canvas.coords(self.obj_id)[1] >= 596 
-                or canvas.coords(self.obj_id)[0] <= 4 
-                or canvas.coords(self.obj_id)[1] <= 4): 
+            c = canvas.coords(self.obj_id)  # [x1, y1, x2, y2]
 
-                print("dot {0} is dead".format(self.obj_id))
+            # Checks to see if the dot is out of bounds and updates its status
+            if c[2] >= 596 or c[3] >= 596 or c[0] <= 4 or c[1] <= 4:
                 self.dead = True
                 canvas.itemconfigure(self.obj_id, fill="red")
-            
-            # Checks to see if the dot has reached it's goal and updates its status
-            elif (canvas.coords(self.obj_id)[0] >= 293 
-                and canvas.coords(self.obj_id)[1] >= 5 
-                and canvas.coords(self.obj_id)[0] <= 307 
-                and canvas.coords(self.obj_id)[1] <= 19): 
 
+            # AABB overlap with goal (293, 5, 307, 19)
+            elif c[2] >= 293 and c[0] <= 307 and c[3] >= 5 and c[1] <= 19:
                 self.reached_goal = True
         else:
             print("dot {0} is dead or has reached goal".format(self.obj_id))
