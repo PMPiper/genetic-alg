@@ -1,6 +1,14 @@
-Confirm the coords arguments order for OOBound checks
+All prior items resolved. Closed items for reference:
 
-1. Fix the run_generation method to be more efficient
-2. Print Generation on screen
-3. Add a global end case for once the goal has been reached
-4. Add obstacle
+  [x] Confirm coords argument order for OOB checks
+  [x] Fix run_generation to be more efficient
+  [x] Print generation number on screen
+  [x] Add global end case once goal is reached
+  [x] Add obstacle
+  [x] Apply Google Python Style Guide (types, docstrings)
+  [x] Optimize Population to hold only current generation (O(pop_size) memory)
+  [x] Add top-N roulette wheel parent selection
+  [x] Add single-point DNA crossover
+  [x] Add waypoint fitness mode (obstacle-aware gradient)
+  [x] Add obstacle death penalty
+  [x] Expose all algorithm parameters via CLI (argparse)
