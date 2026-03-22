@@ -31,12 +31,6 @@ Opens a 600×600 tkinter window. Dots start in the centre and attempt to reach t
 
 ## Parameters
 
-Edit `src/python/main.py` to adjust:
-
-| Parameter | Default | Effect |
-|---|---|---|
-| `pop_size` | `15` | Dots per generation |
-| `brain_size` | `75` | Steps each dot takes per generation |
-| `mutation_rate` | `0.1` | Probability any step is randomised on mutation |
-
-The number of generations is controlled by the `range()` value in the `for` loop in `main.py`. Increasing `pop_size` or `brain_size` will affect performance.
+```bash
+uv run python src/python/main.py --help
+```
