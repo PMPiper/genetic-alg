@@ -1,5 +1,6 @@
 """Population module: manages dot generations and the genetic selection loop."""
 
+import random
 import time
 import tkinter
 from tkinter import Canvas, Tk
@@ -21,6 +22,12 @@ class Population:
         pop_size: Number of dots per generation.
         brain_size: Number of steps in each dot's brain.
         mutation_rate: Probability that each DNA step mutates on reproduction.
+        num_parents: How many top-fitness dots are eligible to breed each
+            generation. With num_parents=1 (the prior default), only the
+            single best dot is ever cloned — this is random local search, not
+            a true genetic algorithm. Raising this to 3–5 preserves genetic
+            diversity: a dot that found a detour around an obstacle may rank
+            5th by raw fitness but carries the only viable path genes.
         generation: Index of the current generation (0-based).
         best_dot: Reference to the fittest Dot from the most recent generation.
         goal_reached: True once any dot has reached the goal.
@@ -35,6 +42,7 @@ class Population:
         pop_size: int,
         brain_size: int,
         mutation_rate: float,
+        num_parents: int = 1,
     ) -> None:
         """Initializes the population, canvas, and static canvas elements.
 
@@ -43,6 +51,8 @@ class Population:
             pop_size: Number of dots per generation.
             brain_size: Number of movement steps per dot brain.
             mutation_rate: Probability in [0, 1] that a DNA step mutates.
+            num_parents: Number of top-fitness dots eligible to breed.
+                Must be >= 1 and <= pop_size.
         """
         self.population: list[dot.Dot] = []
         self.tk: Tk = pop_tk
@@ -51,6 +61,7 @@ class Population:
         self.pop_size: int = pop_size
         self.brain_size: int = brain_size
         self.mutation_rate: float = mutation_rate
+        self.num_parents: int = num_parents
         self.generation: int = 0
         self.best_dot: dot.Dot | None = None
         self.goal_reached: bool = False
@@ -62,6 +73,34 @@ class Population:
         self.obstacle: int = self.canvas.create_rectangle(
             150, 200, 450, 215, fill="brown"
         )
+
+    def _select_parent(self, parents: list[dot.Dot]) -> dot.Dot:
+        """Selects a parent via fitness-proportionate (roulette wheel) selection.
+
+        Each parent's probability of selection is proportional to its fitness,
+        so fitter dots are more likely to contribute genes without completely
+        monopolising reproduction. This is preferable to always picking rank-1:
+        a dot that ranked 4th but found a path around an obstacle should still
+        have a chance to pass on those genes.
+
+        Falls back to random.choice if all fitnesses are zero (degenerate case).
+
+        Args:
+            parents: Candidate dots, already filtered to the top-N by fitness.
+
+        Returns:
+            One dot chosen with probability proportional to its fitness.
+        """
+        total = sum(d.fitness for d in parents)
+        if total == 0.0:
+            return random.choice(parents)
+        threshold = random.uniform(0, total)
+        cumulative = 0.0
+        for d in parents:
+            cumulative += d.fitness
+            if cumulative >= threshold:
+                return d
+        return parents[-1]
 
     def make_first_pop(self) -> None:
         """Creates the initial generation of dots with randomized brains."""
@@ -102,19 +141,29 @@ class Population:
         self.tk.update()
 
     def new_population(self) -> None:
-        """Replaces the current generation with a new one bred from the best dot.
+        """Replaces the current generation with a new one bred from top parents.
 
-        Deletes all current canvas items (except the best dot, which is cloned
-        first), then replaces self.population with the new generation.
+        Selects the top num_parents dots by fitness as the breeding pool, then
+        builds the next generation:
+          - Slot 0: an unmodified clone of the best dot (elitism — guarantees
+            the best solution found so far is never lost).
+          - Remaining slots: clones of parents chosen by fitness-proportionate
+            (roulette wheel) selection, each mutated at mutation_rate.
+
+        Old canvas items are deleted once the new generation is placed.
         """
-        # Clone the new generation before deleting anything so best_dot is
-        # still valid when we call clone/clone_and_mutate.
-        new_gen: list[dot.Dot] = []
-        new_gen.append(self.best_dot.clone(self.canvas))
-        for _ in range(self.pop_size - 1):
-            new_gen.append(self.best_dot.clone_and_mutate(self.canvas, self.mutation_rate))
+        parents = sorted(self.population, key=lambda d: d.fitness, reverse=True)[
+            : self.num_parents
+        ]
 
-        # Remove old canvas items now that we no longer need them.
+        # Build new generation before deleting anything so parent canvas items
+        # are still valid during clone calls.
+        new_gen: list[dot.Dot] = []
+        new_gen.append(parents[0].clone(self.canvas))  # elite pass-through
+        for _ in range(self.pop_size - 1):
+            parent = self._select_parent(parents)
+            new_gen.append(parent.clone_and_mutate(self.canvas, self.mutation_rate))
+
         for d in self.population:
             self.canvas.delete(d.obj_id)
 
