@@ -14,6 +14,8 @@ pop.run_generation()
 time.sleep(2)
 
 for i in range(15):
+    if pop.goal_reached:
+        break
     pop.new_population()
     pop.run_generation()
     time.sleep(2)

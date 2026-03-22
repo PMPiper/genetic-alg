@@ -16,6 +16,7 @@ class Population:
         self.generation = 0
         self.best_dot_index = -1
         self.best_dot = None
+        self.goal_reached = False
 
         # Create the goal dot.
         # the goal id is alway 1, which is stored by the canvas.
@@ -88,6 +89,8 @@ class Population:
         # Set the best dot in the population to be cloned
         self.best_dot = self.population[self.best_dot_index]
         self.canvas.itemconfigure(self.best_dot.obj_id, fill="purple")
+        if self.best_dot.reached_goal:
+            self.goal_reached = True
         self.tk.update()
 
     def new_population(self):
