@@ -10,15 +10,18 @@ import dot
 class Population:
     """Manages a population of dots across multiple generations.
 
+    Only the current generation is kept in memory at any time. Previous
+    generations are deleted from the canvas and garbage collected after
+    each selection step.
+
     Attributes:
-        population: Flat list of all Dot instances across all generations.
+        population: Current generation of Dot instances (length == pop_size).
         tk: The root tkinter window.
         canvas: The tkinter Canvas used for rendering.
         pop_size: Number of dots per generation.
         brain_size: Number of steps in each dot's brain.
         mutation_rate: Probability that each DNA step mutates on reproduction.
         generation: Index of the current generation (0-based).
-        best_dot_index: Population-list index of the fittest dot this generation.
         best_dot: Reference to the fittest Dot from the most recent generation.
         goal_reached: True once any dot has reached the goal.
         goal: Canvas item ID of the goal oval.
@@ -49,7 +52,6 @@ class Population:
         self.brain_size: int = brain_size
         self.mutation_rate: float = mutation_rate
         self.generation: int = 0
-        self.best_dot_index: int = -1
         self.best_dot: dot.Dot | None = None
         self.goal_reached: bool = False
 
@@ -80,39 +82,42 @@ class Population:
         )
 
         for _ in range(self.brain_size + 1):
-            for j in range(self.pop_size):
-                pop_index = j + self.generation * self.pop_size
-                self.population[pop_index].update(self.canvas, obstacle_coords)
+            for d in self.population:
+                d.update(self.canvas, obstacle_coords)
             self.tk.update()
             time.sleep(0.01)
 
         max_fitness = -1.0
-        for i in range(self.pop_size):
-            pop_index = i + self.generation * self.pop_size
-            self.population[pop_index].calc_fitness(self.canvas, self.goal)
-            if self.population[pop_index].fitness > max_fitness:
-                max_fitness = self.population[pop_index].fitness
-                self.best_dot_index = pop_index
+        best_index = 0
+        for i, d in enumerate(self.population):
+            d.calc_fitness(self.canvas, self.goal)
+            if d.fitness > max_fitness:
+                max_fitness = d.fitness
+                best_index = i
 
-        self.best_dot = self.population[self.best_dot_index]
+        self.best_dot = self.population[best_index]
         self.canvas.itemconfigure(self.best_dot.obj_id, fill="purple")
         if self.best_dot.reached_goal:
             self.goal_reached = True
         self.tk.update()
 
     def new_population(self) -> None:
-        """Hides the current generation and seeds the next from the best dot."""
-        for i in range(self.pop_size):
-            pop_index = i + self.generation * self.pop_size
-            self.canvas.itemconfig(self.population[pop_index].obj_id, state="hidden")
-        self.tk.update()
+        """Replaces the current generation with a new one bred from the best dot.
 
-        for i in range(self.pop_size):
-            if i == 0:
-                self.population.append(self.best_dot.clone(self.canvas))
-            else:
-                self.population.append(
-                    self.best_dot.clone_and_mutate(self.canvas, self.mutation_rate)
-                )
+        Deletes all current canvas items (except the best dot, which is cloned
+        first), then replaces self.population with the new generation.
+        """
+        # Clone the new generation before deleting anything so best_dot is
+        # still valid when we call clone/clone_and_mutate.
+        new_gen: list[dot.Dot] = []
+        new_gen.append(self.best_dot.clone(self.canvas))
+        for _ in range(self.pop_size - 1):
+            new_gen.append(self.best_dot.clone_and_mutate(self.canvas, self.mutation_rate))
 
+        # Remove old canvas items now that we no longer need them.
+        for d in self.population:
+            self.canvas.delete(d.obj_id)
+
+        self.population = new_gen
         self.generation += 1
+        self.tk.update()
